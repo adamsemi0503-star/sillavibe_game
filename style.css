@@ -1,0 +1,162 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    font-family: 'Arial', sans-serif;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+#info-panel {
+    display: flex;
+    gap: 40px;
+}
+
+#score-container, #timer-container {
+    text-align: center;
+    background-color: #fff;
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    width: 120px;
+}
+
+#score, #timer {
+    font-size: 2em;
+    font-weight: bold;
+    color: #333;
+}
+
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(8, 50px);
+    grid-template-rows: repeat(8, 50px);
+    gap: 2px;
+    background-color: #ccc;
+    border: 2px solid #999;
+    padding: 5px;
+    border-radius: 5px;
+    position: relative; /* For placeholder positioning */
+}
+
+.jewel {
+    width: 50px;
+    height: 50px;
+    border-radius: 5px;
+    cursor: pointer;
+    background-size: cover;
+    box-sizing: border-box;
+    z-index: 10;
+    transition: transform 0.2s;
+}
+
+.placeholder {
+    width: 50px;
+    height: 50px;
+    box-sizing: border-box;
+    border: 2px dotted #999;
+    border-radius: 5px;
+    z-index: 5;
+}
+
+@keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.jewel.flashing {
+    animation: flash 0.4s 2;
+}
+
+.jewel.selected {
+    border: 3px solid #000;
+    transform: scale(1.1);
+}
+
+#item-container {
+    display: flex;
+    gap: 10px;
+}
+
+.item-button {
+    width: 80px; /* Adjusted for square-like icons */
+    height: 80px;
+    padding: 15px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background-color: #fdfdfd;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background-color 0.2s, transform 0.2s, border-color 0.2s;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 60%; /* Adjust icon size */
+}
+
+#item-refresh { background-image: url('img/free-icon-reload-7134763.png'); }
+#item-knight { background-image: url('img/free-icon-chess-knight-107620.png'); }
+#item-bomb { background-image: url('img/free-icon-bomb-595582.png'); }
+
+.item-button:hover {
+    background-color: #e9e9e9;
+}
+
+.item-button.active {
+    border-color: #f44336;
+    transform: scale(1.05);
+}
+
+.item-button:disabled {
+    background-color: #9E9E9E;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+#game-over-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+#game-over-content {
+    background-color: white;
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+#restart-button {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Jewel Images */
+.color-1 { background-image: url('img/free-icon-gem-3530269.png'); }
+.color-2 { background-image: url('img/free-icon-gem-3530908.png'); }
+.color-3 { background-image: url('img/free-icon-gems-3621938.png'); }
+.color-4 { background-image: url('img/free-icon-gemstone-7097679.png'); }
+.color-5 { background-image: url('img/free-icon-jewelry-store-71122.png'); }

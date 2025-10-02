@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jewel Match-3 Deluxe</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div id="info-panel">
+            <div id="score-container">
+                <h2>Score</h2>
+                <div id="score">0</div>
+            </div>
+            <div id="timer-container">
+                <h2>Time</h2>
+                <div id="timer">60</div>
+            </div>
+        </div>
+        <div id="game-board"></div>
+        <div id="item-container">
+            <button id="item-refresh" class="item-button"></button>
+            <button id="item-knight" class="item-button"></button>
+            <button id="item-bomb" class="item-button"></button>
+        </div>
+    </div>
+    <div id="game-over-modal" class="hidden">
+        <div id="game-over-content">
+            <h2>Game Over</h2>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <button id="restart-button">Restart</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
