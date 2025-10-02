@@ -1,45 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
     const gameBoard = document.getElementById('game-board');
     const scoreDisplay = document.getElementById('score');
-    const timerDisplay = document.getElementById('timer');
-    const refreshBtn = document.getElementById('item-refresh');
-    const knightBtn = document.getElementById('item-knight');
-    const bombBtn = document.getElementById('item-bomb');
-    const gameOverModal = document.getElementById('game-over-modal');
-    const finalScoreDisplay = document.getElementById('final-score');
-    const restartBtn = document.getElementById('restart-button');
 
-    // Game Constants
     const rows = 8;
     const cols = 8;
     const jewelColors = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5'];
 
-    // Game State
     let board = [];
     let score = 0;
-    let timer = 60;
-    let timerInterval = null;
     let selectedJewel = null;
     let isProcessing = false;
-    let activeItem = null;
 
     function startGame() {
-        isProcessing = true; // Stop any interactions while setting up
-        stopTimer();
-
-        score = 0;
-        timer = 60;
-        activeItem = null;
-        scoreDisplay.textContent = score;
-        timerDisplay.textContent = timer;
-        gameOverModal.classList.add('hidden');
-        document.querySelectorAll('.item-button').forEach(btn => { 
-            btn.disabled = false; 
-            btn.classList.remove('active');
-        });
-
         board = [];
+        score = 0;
+        scoreDisplay.textContent = score;
+        isProcessing = false;
+
         for (let r = 0; r < rows; r++) {
             board[r] = [];
             for (let c = 0; c < cols; c++) {
@@ -54,12 +31,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         renderBoard();
-        isProcessing = false;
-        startTimer();
     }
 
     function renderBoard() {
-        gameBoard.innerHTML = '';
+        const jewelsOnBoard = new Map();
+        document.querySelectorAll('.jewel').forEach(j => {
+            jewelsOnBoard.set(`${j.dataset.row}-${j.dataset.col}`, j);
+        });
+
+        gameBoard.innerHTML = ''; // Clear placeholders and old jewels
+
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 if (board[r][c]) {
@@ -75,185 +56,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- TIMER LOGIC ---
-    function startTimer() {
-        if (timer > 0 && !isProcessing) {
-            stopTimer(); // Ensure no multiple timers
-            timerInterval = setInterval(() => {
-                timer--;
-                timerDisplay.textContent = timer;
-                if (timer <= 0) {
-                    gameOver();
-                }
-            }, 1000);
-        }
-    }
-
-    function stopTimer() {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
-
-    function gameOver() {
-        stopTimer();
-        isProcessing = true;
-        finalScoreDisplay.textContent = score;
-        gameOverModal.classList.remove('hidden');
-    }
-
-    // --- MAIN GAME LOGIC ---
-    async function processMove(r1, c1, r2, c2, isItemMove = false) {
-        if (isProcessing) return;
-        isProcessing = true;
-        stopTimer();
-
-        [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
-        if (!isItemMove) renderBoard(); // Only render swap for normal moves
-        
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        let matches = findMatches();
-        if (matches.length === 0 && !isItemMove) {
-            [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
-            renderBoard();
-            await new Promise(resolve => setTimeout(resolve, 100));
-        } else {
-            if (matches.length > 0) timer += 3;
-            
-            while (matches.length > 0) {
-                score += calculateScore(matches.length);
-                await animateRemoval(matches);
-                matches.forEach(match => { board[match.r][match.c] = null; });
-                dropJewels();
-                fillJewels();
-                matches = findMatches();
-            }
-            renderBoard();
-        }
-        
-        isProcessing = false;
-        startTimer();
-    }
-
-    function calculateScore(numMatches) {
-        if (numMatches >= 5) return 100;
-        if (numMatches === 4) return 50;
-        return 30;
-    }
-
-    // --- EVENT HANDLERS ---
     gameBoard.addEventListener('click', async (e) => {
         if (isProcessing) return;
         const clickedJewel = e.target.closest('.jewel');
         if (!clickedJewel) return;
 
-        const r = parseInt(clickedJewel.dataset.row);
-        const c = parseInt(clickedJewel.dataset.col);
-
-        if (activeItem) {
-            const item = activeItem;
-            activeItem = null; // Consume item on click
-            document.querySelector('.item-button.active')?.classList.remove('active');
-
-            if (item === 'bomb') {
-                await handleBomb(r, c);
-            } else if (item === 'knight') {
-                handleKnight(r, c, clickedJewel);
-            }
-        } else {
-            if (!selectedJewel) {
-                selectedJewel = { r, c, element: clickedJewel };
-                clickedJewel.classList.add('selected');
-            } else {
-                const { r: r1, c: c1 } = selectedJewel;
-                selectedJewel.element.classList.remove('selected');
-                if (r1 !== r || c1 !== c) { // Not the same jewel
-                    const isAdjacent = Math.abs(r1 - r) + Math.abs(c1 - c) === 1;
-                    if (isAdjacent) {
-                        await processMove(r1, c1, r, c);
-                    }
-                }
-                selectedJewel = null;
-            }
-        }
-    });
-
-    refreshBtn.addEventListener('click', () => {
-        if (isProcessing) return;
-        isProcessing = true;
-        stopTimer();
-        const flatBoard = board.flat();
-        for (let i = flatBoard.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [flatBoard[i], flatBoard[j]] = [flatBoard[j], flatBoard[i]];
-        }
-        for (let r = 0; r < rows; r++) {
-            board[r] = flatBoard.slice(r * cols, (r + 1) * cols);
-        }
-        // A full restart is the safest way to prevent post-shuffle matches
-        startGame();
-        refreshBtn.disabled = true;
-    });
-
-    knightBtn.addEventListener('click', () => { if(!isProcessing) setActiveItem('knight', knightBtn); });
-    bombBtn.addEventListener('click', () => { if(!isProcessing) setActiveItem('bomb', bombBtn); });
-    restartBtn.addEventListener('click', startGame);
-
-    function setActiveItem(item, btn) {
-        document.querySelector('.item-button.active')?.classList.remove('active');
-        if (activeItem === item) {
-            activeItem = null;
-        } else {
-            activeItem = item;
-            btn.classList.add('active');
-        }
-        selectedJewel = null; // Deselect any jewel when an item is chosen
-    }
-
-    async function handleBomb(r, c) {
-        isProcessing = true;
-        stopTimer();
-        const matches = [];
-        for (let i = r - 1; i <= r + 1; i++) {
-            for (let j = c - 1; j <= c + 1; j++) {
-                if (i >= 0 && i < rows && j >= 0 && j < cols) {
-                    matches.push({ r: i, c: j });
-                }
-            }
-        }
-        score += calculateScore(matches.length);
-        await animateRemoval(matches);
-        matches.forEach(match => { board[match.r][match.c] = null; });
-        dropJewels();
-        fillJewels();
-        renderBoard();
-        bombBtn.disabled = true;
-        isProcessing = false;
-        startTimer();
-    }
-
-    function handleKnight(r, c, jewelElement) {
         if (!selectedJewel) {
-            selectedJewel = { r, c, element: jewelElement };
-            jewelElement.classList.add('selected');
+            selectedJewel = clickedJewel;
+            selectedJewel.classList.add('selected');
         } else {
-            const { r: r1, c: c1 } = selectedJewel;
-            const isKnightMove = (Math.abs(r1 - r) === 2 && Math.abs(c1 - c) === 1) || (Math.abs(r1 - r) === 1 && Math.abs(c1 - c) === 2);
-            selectedJewel.element.classList.remove('selected');
-            if (isKnightMove) {
-                processMove(r1, c1, r, c, true);
-                knightBtn.disabled = true;
+            isProcessing = true;
+            selectedJewel.classList.remove('selected');
+            const r1 = parseInt(selectedJewel.dataset.row);
+            const c1 = parseInt(selectedJewel.dataset.col);
+            const r2 = parseInt(clickedJewel.dataset.row);
+            const c2 = parseInt(clickedJewel.dataset.col);
+
+            if (selectedJewel !== clickedJewel && Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1) {
+                await handleMove(r1, c1, r2, c2);
             }
+            
             selectedJewel = null;
+            isProcessing = false;
+        }
+    });
+
+    async function handleMove(r1, c1, r2, c2) {
+        [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+        renderBoard();
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        let matches = findMatches();
+        if (matches.length === 0) {
+            [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+            renderBoard();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            return;
+        }
+
+        while (matches.length > 0) {
+            score += matches.length * 10;
+            scoreDisplay.textContent = score;
+
+            await animateRemoval(matches);
+            
+            matches.forEach(match => { board[match.r][match.c] = null; });
+            dropJewels();
+            fillJewels();
+
+            // Re-render the board to be in sync for the next cascade check
+            renderBoard();
+            await new Promise(resolve => setTimeout(resolve, 400)); // Wait for user to see the new board
+
+            matches = findMatches();
         }
     }
 
-    // --- UTILITY FUNCTIONS ---
-    async function animateRemoval(matches) { /* ... same as before ... */ }
-    function findMatches() { /* ... same as before ... */ }
-    function dropJewels() { /* ... same as before ... */ }
-    function fillJewels() { /* ... same as before ... */ }
-    // Need to re-paste the utility functions as they were cleared
     async function animateRemoval(matches) {
         const animationPromises = [];
         matches.forEach(match => {
@@ -265,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 placeholder.style.gridRowStart = r + 1;
                 placeholder.style.gridColumnStart = c + 1;
                 gameBoard.appendChild(placeholder);
+
                 jewelEl.classList.add('flashing');
                 animationPromises.push(new Promise(res => jewelEl.addEventListener('animationend', res, { once: true })));
             }
@@ -314,6 +173,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- INITIAL KICK-OFF ---
     startGame();
 });
